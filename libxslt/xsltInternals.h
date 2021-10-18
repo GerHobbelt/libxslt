@@ -1756,7 +1756,6 @@ struct _xsltTransformContext {
     xmlNodePtr lastTextNode;
     int lastNodeSize;
 
-    xmlNodePtr tempInsert;
     /*
      * Speed optimization when coalescing text nodes
      */
