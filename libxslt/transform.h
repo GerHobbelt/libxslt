@@ -181,6 +181,8 @@ XSLTPUBFUN xmlNodePtr XSLTCALL
 					 const xmlChar *string,
 					 int noescape);
 
+XSLTPUBFUN void XSLTCALL xsltFlush(xsltTransformContextPtr ctxt);
+
 /* Following 2 functions needed for libexslt/functions.c */
 XSLTPUBFUN void XSLTCALL
 		xsltLocalVariablePop	(xsltTransformContextPtr ctxt,

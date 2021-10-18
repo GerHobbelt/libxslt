@@ -966,7 +966,8 @@ xsltEvalVariable(xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
 	} else {
 	    if (variable->tree) {
 		xmlDocPtr container;
-		xmlNodePtr oldInsert;
+		xmlNodePtr oldInsert, oldLastNode;
+		int oldLastSize;
 		xmlDocPtr  oldOutput;
 		xsltStackElemPtr oldVar = ctxt->contextVariable;
 
@@ -993,6 +994,8 @@ xsltEvalVariable(xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
 
 		oldOutput = ctxt->output;
 		oldInsert = ctxt->insert;
+		oldLastNode = ctxt->lastTextNode;
+		oldLastSize = ctxt->lastNodeSize;
 
 		ctxt->output = container;
 		ctxt->insert = (xmlNodePtr) container;
@@ -1003,11 +1006,14 @@ xsltEvalVariable(xsltTransformContextPtr ctxt, xsltStackElemPtr variable,
 		*/
 		xsltApplyOneTemplate(ctxt, ctxt->node, variable->tree,
 		    NULL, NULL);
+        xsltFlush(ctxt);
 
 		ctxt->contextVariable = oldVar;
 		ctxt->insert = oldInsert;
 		ctxt->output = oldOutput;
-
+        if (ctxt->lastTextNode != oldLastNode)
+			ctxt->lastNodeSize = oldLastSize;
+		ctxt->lastTextNode = oldLastNode;
 		result = xmlXPathNewValueTree((xmlNodePtr) container);
 	    }
 	    if (result == NULL) {

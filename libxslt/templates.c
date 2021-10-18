@@ -208,8 +208,9 @@ xsltEvalTemplateString(xsltTransformContextPtr ctxt,
 		       xmlNodePtr contextNode,
 	               xmlNodePtr inst)
 {
-    xmlNodePtr oldInsert, insert = NULL;
-    xmlChar *ret;
+    xmlNodePtr oldInsert, oldLastNode, insert = NULL;
+    int oldLastSize;
+	xmlChar *ret;
     const xmlChar *oldLastText;
     int oldLastTextSize, oldLastTextUse;
 
@@ -234,19 +235,20 @@ xsltEvalTemplateString(xsltTransformContextPtr ctxt,
 	return(NULL);
     }
     oldInsert = ctxt->insert;
+    oldLastNode = ctxt->lastTextNode;
     ctxt->insert = insert;
-    oldLastText = ctxt->lasttext;
-    oldLastTextSize = ctxt->lasttsize;
-    oldLastTextUse = ctxt->lasttuse;
+
+    
     /*
     * OPTIMIZE TODO: if inst->children consists only of text-nodes.
     */
     xsltApplyOneTemplate(ctxt, contextNode, inst->children, NULL, NULL);
 
+    xsltFlush(ctxt);
     ctxt->insert = oldInsert;
-    ctxt->lasttext = oldLastText;
-    ctxt->lasttsize = oldLastTextSize;
-    ctxt->lasttuse = oldLastTextUse;
+    if (ctxt->lastTextNode != oldLastNode)
+		ctxt->lastNodeSize = oldLastSize;
+	ctxt->lastTextNode = oldLastNode;
 
     ret = xmlNodeGetContent(insert);
     if (insert != NULL)

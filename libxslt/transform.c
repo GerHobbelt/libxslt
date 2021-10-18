@@ -736,6 +736,8 @@ xsltFreeTransformContext(xsltTransformContextPtr ctxt) {
 	ctxt->xpathCtxt->nsHash = NULL;
 	xmlXPathFreeContext(ctxt->xpathCtxt);
     }
+    if (ctxt->buffer != NULL)
+        xmlFree(ctxt->buffer);
     if (ctxt->templTab != NULL)
 	xmlFree(ctxt->templTab);
     if (ctxt->varsTab != NULL)
@@ -799,73 +801,149 @@ xsltAddChild(xmlNodePtr parent, xmlNodePtr cur) {
 }
 
 /**
+ * xsltDuplicate
+ * @src: The source text
+ * @dst: The destination text
+ * @srcLen: The length of src in chars
+ * @dstSize: The length of dst in chars
+ * 
+ * Copies the content of the source text at the end of the dst one.
+ *
+ * Returns: The new length of the destination text
+ */
+
+static int xsltDuplicate(xmlChar **src, xmlChar **dst, int srcLen, int dstLen, xsltTransformContextPtr ctxt)
+{
+    if (INT_MAX - srcLen <= dstLen)
+    {
+        xsltTransformError(ctxt, NULL, NULL,
+                "xsltDuplicate: text allocation failed\n");
+        return 0;
+    }
+    xmlChar *buffer;
+    buffer = (xmlChar *) xmlRealloc(*dst, (srcLen + dstLen + 1) * sizeof(xmlChar));
+
+    memcpy(&(buffer[dstLen]), *src, srcLen);
+    buffer[srcLen + dstLen] = 0;
+    *dst = buffer;
+
+    return dstLen + srcLen;
+}
+
+/**
+ * xsltFlush
+ * @ctxt:  a XSLT process context
+ *
+ * Flushes the content of the context buffer into the last known text node
+ */
+void xsltFlush(xsltTransformContextPtr ctxt)
+{
+    if (ctxt->bufsize > 0 && ctxt->buffer != NULL && ctxt->lastTextNode != NULL)
+    {
+        xsltDuplicate(&ctxt->buffer, &ctxt->lastTextNode->content, ctxt->bufsize, ctxt->lastNodeSize, ctxt);
+        
+        xmlChar *tmp = ctxt->buffer;
+        ctxt->buffer = xmlStrdup("");
+        xmlFree(tmp);
+
+        ctxt->lastNodeSize += ctxt->bufsize;
+        ctxt->bufsize = 0;
+    }
+}
+
+/**
  * xsltAddTextString:
  * @ctxt:  a XSLT process context
  * @target:  the text node where the text will be attached
  * @string:  the text string
  * @len:  the string length in byte
  *
- * Extend the current text node with the new string, it handles coalescing
+ * Extend the current text node with the new string or extend the context buffer with the new string, 
+ * it handles coalescing
  *
  * Returns: the text node
  */
+
+
 static xmlNodePtr
 xsltAddTextString(xsltTransformContextPtr ctxt, xmlNodePtr target,
 		  const xmlChar *string, int len) {
-    /*
-     * optimization
-     */
-    if ((len <= 0) || (string == NULL) || (target == NULL))
+   
+    if ((len <= 0) || (string == NULL) || (target == NULL) || ctxt == NULL)
         return(target);
 
-    if (ctxt->lasttext == target->content) {
-        int minSize;
+    if (ctxt->lastTextNode == NULL) /* LastTextNode initialization */
+    {
+		ctxt->lastTextNode = target;
+        xmlChar *tmp = ctxt->lastTextNode->content;
 
-        /* Check for integer overflow accounting for NUL terminator. */
-        if (len >= INT_MAX - ctxt->lasttuse) {
-            xsltTransformError(ctxt, NULL, target,
-                "xsltCopyText: text allocation failed\n");
-            return(NULL);
+        int length = xmlStrlen(ctxt->lastTextNode->content);
+        ctxt->bufsize = xsltDuplicate(&ctxt->lastTextNode->content, &ctxt->buffer, length, ctxt->bufsize, ctxt);
+        
+        ctxt->lastTextNode->content = xmlStrdup("");
+        ctxt->lastNodeSize = 0;
+        if (xmlDictOwns(target->doc->dict, tmp) == 0)
+        {
+            xmlFree(tmp);
         }
-        minSize = ctxt->lasttuse + len + 1;
-
-        if (ctxt->lasttsize < minSize) {
-	    xmlChar *newbuf;
-	    int size;
-            int extra;
-
-            /* Double buffer size but increase by at least 100 bytes. */
-            extra = minSize < 100 ? 100 : minSize;
-
-            /* Check for integer overflow. */
-            if (extra > INT_MAX - ctxt->lasttsize) {
-                size = INT_MAX;
-            }
-            else {
-                size = ctxt->lasttsize + extra;
-            }
-
-	    newbuf = (xmlChar *) xmlRealloc(target->content,size);
-	    if (newbuf == NULL) {
-		xsltTransformError(ctxt, NULL, target,
-		 "xsltCopyText: text allocation failed\n");
-		return(NULL);
-	    }
-	    ctxt->lasttsize = size;
-	    ctxt->lasttext = newbuf;
-	    target->content = newbuf;
-	}
-	memcpy(&(target->content[ctxt->lasttuse]), string, len);
-	ctxt->lasttuse += len;
-	target->content[ctxt->lasttuse] = 0;
-    } else {
-	xmlNodeAddContent(target, string);
-	ctxt->lasttext = target->content;
-	len = xmlStrlen(target->content);
-	ctxt->lasttsize = len;
-	ctxt->lasttuse = len;
     }
-    return(target);
+
+    if (ctxt->lastTextNode->content[ctxt->lastNodeSize] != 0) /* Some text was added through xmlAddChild */ 
+    {
+        
+        int length = xmlStrlen(ctxt->lastTextNode);
+        if (ctxt->bufsize > 0)
+        {
+            xmlChar *tmp = ctxt->lastTextNode->content;
+            ctxt->bufsize = xsltDuplicate(&ctxt->lastTextNode, &ctxt->buffer, length, ctxt->bufsize, ctxt);
+            ctxt->lastTextNode->content = xmlStrdup("");
+            ctxt->lastNodeSize = 0;
+            
+            if (xmlDictOwns(target->doc->dict, tmp) == 0)
+                 xmlFree(tmp);
+        }
+        else
+        {
+            ctxt->lastNodeSize = length;
+        }
+    }
+
+    if (ctxt->insert != NULL && ctxt->insert->last != NULL && /* Stack handling */ 
+        ctxt->insert->last->content != NULL && 
+        target->content != ctxt->lastTextNode->content && 
+        target->content[0] != 0)
+    {
+        xmlNodeAddContentLen(target, string, len);
+        return (target);
+    }
+
+    if (ctxt->lastTextNode != target) /* No longer the last text node */     
+    {
+        xsltFlush(ctxt);
+        if (target->type == XML_TEXT_NODE || target->type == XML_CDATA_SECTION_NODE)
+        {
+            int length = xmlStrlen(target->content);
+            ctxt->bufsize = xsltDuplicate(&target->content, &ctxt->buffer, length, 0, ctxt);
+           
+            xmlChar *tmp = target->content; 
+            ctxt->lastTextNode = target;
+            target->content = xmlStrdup("");
+            if (xmlDictOwns(target->doc->dict, tmp) == 0)       
+            {
+                xmlFree(tmp);
+            }
+        }
+
+        else /* It should never enter here */
+        {
+            xmlNodePtr newnode = xmlNewText("");
+            ctxt->lastTextNode = xsltAddChild(target->parent, newnode);
+        }
+        ctxt->lastNodeSize = 0;
+    }
+
+    ctxt->bufsize = xsltDuplicate(&string, &ctxt->buffer, len, ctxt->bufsize, ctxt);
+    return (target);
 }
 
 /**
@@ -902,7 +980,6 @@ xsltCopyTextString(xsltTransformContextPtr ctxt, xmlNodePtr target,
     * target node.
     */
     if ((target == NULL) || (target->children == NULL)) {
-	ctxt->lasttext = NULL;
     }
 
     /* handle coalescing of text nodes here */
@@ -954,13 +1031,9 @@ xsltCopyTextString(xsltTransformContextPtr ctxt, xmlNodePtr target,
     if (copy != NULL && target != NULL)
 	copy = xsltAddChild(target, copy);
     if (copy != NULL) {
-	ctxt->lasttext = copy->content;
-	ctxt->lasttsize = len;
-	ctxt->lasttuse = len;
     } else {
 	xsltTransformError(ctxt, NULL, target,
 			 "xsltCopyTextString: text copy failed\n");
-	ctxt->lasttext = NULL;
     }
     return(copy);
 }
@@ -1010,7 +1083,6 @@ xsltCopyText(xsltTransformContextPtr ctxt, xmlNodePtr target,
     * target node.
     */
     if ((target == NULL) || (target->children == NULL)) {
-	ctxt->lasttext = NULL;
     }
 
     if ((ctxt->style->cdataSection != NULL) &&
@@ -1051,9 +1123,6 @@ xsltCopyText(xsltTransformContextPtr ctxt, xmlNodePtr target,
 	    copy = xmlNewCDataBlock(ctxt->output, cur->content, len);
 	    if (copy == NULL)
 		goto exit;
-	    ctxt->lasttext = copy->content;
-	    ctxt->lasttsize = len;
-	    ctxt->lasttuse = len;
 	}
     } else if ((target != NULL) &&
 	(target->last != NULL) &&
@@ -1094,8 +1163,6 @@ xsltCopyText(xsltTransformContextPtr ctxt, xmlNodePtr target,
 	    if ((copy->content = xmlStrdup(cur->content)) == NULL)
 		return NULL;
 	}
-
-	ctxt->lasttext = NULL;
     } else {
         /*
 	 * normal processing. keep counters to extend the text node
@@ -1109,9 +1176,6 @@ xsltCopyText(xsltTransformContextPtr ctxt, xmlNodePtr target,
 	    goto exit;
 	if (cur->name == xmlStringTextNoenc)
 	    copy->name = xmlStringTextNoenc;
-	ctxt->lasttext = copy->content;
-	ctxt->lasttsize = len;
-	ctxt->lasttuse = len;
     }
     if (copy != NULL) {
 	if (target != NULL) {
@@ -2683,7 +2747,6 @@ xsltApplySequenceConstructor(xsltTransformContextPtr ctxt,
                      * #777432.
                      */
                     if (cur->psvi == xsltExtMarker) {
-                        ctxt->lasttext = NULL;
                     }
 
 		    ctxt->insert = insert;
@@ -2880,7 +2943,6 @@ xsltApplySequenceConstructor(xsltTransformContextPtr ctxt,
                  * #777432.
                  */
                 if (cur->psvi == xsltExtMarker) {
-	            ctxt->lasttext = NULL;
                 }
 
                 ctxt->insert = insert;
@@ -3040,6 +3102,7 @@ error:
         xslDropCall();
     }
 #endif
+    xsltFlush(ctxt);
 }
 
 /*
@@ -3370,8 +3433,9 @@ xsltDocumentElem(xsltTransformContextPtr ctxt, xmlNodePtr node,
     xmlChar *element, *end;
     xmlDocPtr res = NULL;
     xmlDocPtr oldOutput;
-    xmlNodePtr oldInsert, root;
-    const char *oldOutputFile;
+    xmlNodePtr oldInsert, oldLastNode, root;
+    int oldLastSize;
+	const char *oldOutputFile;
     xsltOutputType oldType;
     xmlChar *URL = NULL;
     const xmlChar *method;
@@ -3497,6 +3561,8 @@ xsltDocumentElem(xsltTransformContextPtr ctxt, xmlNodePtr node,
     oldOutput = ctxt->output;
     oldInsert = ctxt->insert;
     oldType = ctxt->type;
+    oldLastNode = ctxt->lastTextNode;
+	oldLastSize = ctxt->lastNodeSize;
     ctxt->outputFile = (const char *) filename;
 
     style = xsltNewStylesheet();
@@ -3843,6 +3909,9 @@ xsltDocumentElem(xsltTransformContextPtr ctxt, xmlNodePtr node,
     ctxt->insert = oldInsert;
     ctxt->type = oldType;
     ctxt->outputFile = oldOutputFile;
+    if (ctxt->lastTextNode != oldLastNode)
+		ctxt->lastNodeSize = oldLastSize;
+	ctxt->lastTextNode = oldLastNode;
     if (URL != NULL)
         xmlFree(URL);
     if (filename != NULL)
@@ -6226,6 +6295,8 @@ xsltApplyStylesheetUser(xsltStylesheetPtr style, xmlDocPtr doc,
 
     res = xsltApplyStylesheetInternal(style, doc, params, output,
 	                              profile, userCtxt);
+    if (res != NULL)
+        xsltFlush(userCtxt);
     return (res);
 }
 

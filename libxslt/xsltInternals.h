@@ -1747,11 +1747,19 @@ struct _xsltTransformContext {
     int             ctxtflags;          /* context processing flags */
 
     /*
+     * Text output optimization
+     */
+    xmlChar        *buffer;
+    int bufsize;
+    int bufuse;
+
+    xmlNodePtr lastTextNode;
+    int lastNodeSize;
+
+    xmlNodePtr tempInsert;
+    /*
      * Speed optimization when coalescing text nodes
      */
-    const xmlChar  *lasttext;		/* last text node content */
-    int             lasttsize;		/* last text node size */
-    int             lasttuse;		/* last text node use */
     /*
      * Per Context Debugging
      */
