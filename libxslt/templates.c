@@ -211,8 +211,6 @@ xsltEvalTemplateString(xsltTransformContextPtr ctxt,
     xmlNodePtr oldInsert, oldLastNode, insert = NULL;
     int oldLastSize;
 	xmlChar *ret;
-    const xmlChar *oldLastText;
-    int oldLastTextSize, oldLastTextUse;
 
     if ((ctxt == NULL) || (contextNode == NULL) || (inst == NULL) ||
         (inst->type != XML_ELEMENT_NODE))
@@ -236,6 +234,7 @@ xsltEvalTemplateString(xsltTransformContextPtr ctxt,
     }
     oldInsert = ctxt->insert;
     oldLastNode = ctxt->lastTextNode;
+    oldLastSize = ctxt->lastNodeSize;
     ctxt->insert = insert;
 
     

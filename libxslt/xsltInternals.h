@@ -1751,7 +1751,6 @@ struct _xsltTransformContext {
      */
     xmlChar        *buffer;
     int bufsize;
-    int bufuse;
 
     xmlNodePtr lastTextNode;
     int lastNodeSize;
