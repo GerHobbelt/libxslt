@@ -1749,11 +1749,11 @@ struct _xsltTransformContext {
     /*
      * Text output optimization
      */
-    xmlChar        *buffer;
-    int bufsize;
+    xmlChar        *buffer;     /* the text node buffer */
+    int bufsize;                /* the size of the buffer */              
 
-    xmlNodePtr lastTextNode;
-    int lastNodeSize;
+    xmlNodePtr lastTextNode;   
+    int lastNodeSize;           /* the size of the last text node */
 
     /*
      * Speed optimization when coalescing text nodes

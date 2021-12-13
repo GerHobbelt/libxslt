@@ -236,8 +236,6 @@ xsltEvalTemplateString(xsltTransformContextPtr ctxt,
     oldLastNode = ctxt->lastTextNode;
     oldLastSize = ctxt->lastNodeSize;
     ctxt->insert = insert;
-
-    
     /*
     * OPTIMIZE TODO: if inst->children consists only of text-nodes.
     */

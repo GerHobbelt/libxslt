@@ -863,8 +863,6 @@ void xsltFlush(xsltTransformContextPtr ctxt)
  *
  * Returns: the text node
  */
-
-
 static xmlNodePtr
 xsltAddTextString(xsltTransformContextPtr ctxt, xmlNodePtr target,
 		  const xmlChar *string, int len) {
@@ -941,7 +939,6 @@ xsltAddTextString(xsltTransformContextPtr ctxt, xmlNodePtr target,
         }
         ctxt->lastNodeSize = 0;
     }
-
     ctxt->bufsize = xsltDuplicate(&string, &ctxt->buffer, len, ctxt->bufsize, ctxt);
     return (target);
 }
