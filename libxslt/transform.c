@@ -821,8 +821,13 @@ static int xsltDuplicate(xmlChar **src, xmlChar **dst, int srcLen, int dstLen, x
         return 0;
     }
     xmlChar *buffer;
-    buffer = (xmlChar *) xmlRealloc(*dst, (srcLen + dstLen + 1) * sizeof(xmlChar));
-
+    if (*dst == ctxt->buffer && srcLen + dstLen >= ctxt->bufsize)
+    {    
+        ctxt->bufsize = (srcLen + dstLen + 1) * sizeof(xmlChar) * 1.5;
+        buffer = (xmlChar *) xmlRealloc(*dst, ctxt->bufsize);
+    }
+    else
+        buffer = (xmlChar *) xmlRealloc(*dst, (srcLen + dstLen + 1) * sizeof(xmlChar));
     memcpy(&(buffer[dstLen]), *src, srcLen);
     buffer[srcLen + dstLen] = 0;
     *dst = buffer;
@@ -838,16 +843,12 @@ static int xsltDuplicate(xmlChar **src, xmlChar **dst, int srcLen, int dstLen, x
  */
 void xsltFlush(xsltTransformContextPtr ctxt)
 {
-    if (ctxt->bufsize > 0 && ctxt->buffer != NULL && ctxt->lastTextNode != NULL)
+    if (ctxt->bufuse > 0 && ctxt->buffer != NULL && ctxt->lastTextNode != NULL)
     {
-        xsltDuplicate(&ctxt->buffer, &ctxt->lastTextNode->content, ctxt->bufsize, ctxt->lastNodeSize, ctxt);
-        
-        xmlChar *tmp = ctxt->buffer;
-        ctxt->buffer = xmlStrdup("");
-        xmlFree(tmp);
-
-        ctxt->lastNodeSize += ctxt->bufsize;
-        ctxt->bufsize = 0;
+        xsltDuplicate(&ctxt->buffer, &ctxt->lastTextNode->content, ctxt->bufuse, ctxt->lastNodeSize, ctxt);
+        memset(ctxt->buffer, 0, ctxt->bufuse);
+        ctxt->lastNodeSize += ctxt->bufuse;
+        ctxt->bufuse = 0;
     }
 }
 
@@ -876,7 +877,7 @@ xsltAddTextString(xsltTransformContextPtr ctxt, xmlNodePtr target,
         xmlChar *tmp = ctxt->lastTextNode->content;
 
         int length = xmlStrlen(ctxt->lastTextNode->content);
-        ctxt->bufsize = xsltDuplicate(&ctxt->lastTextNode->content, &ctxt->buffer, length, ctxt->bufsize, ctxt);
+        ctxt->bufuse = xsltDuplicate(&ctxt->lastTextNode->content, &ctxt->buffer, length, ctxt->bufuse, ctxt);
         
         ctxt->lastTextNode->content = xmlStrdup("");
         ctxt->lastNodeSize = 0;
@@ -890,10 +891,10 @@ xsltAddTextString(xsltTransformContextPtr ctxt, xmlNodePtr target,
     {
         
         int length = xmlStrlen(ctxt->lastTextNode);
-        if (ctxt->bufsize > 0)
+        if (ctxt->bufuse > 0)
         {
             xmlChar *tmp = ctxt->lastTextNode->content;
-            ctxt->bufsize = xsltDuplicate(&ctxt->lastTextNode, &ctxt->buffer, length, ctxt->bufsize, ctxt);
+            ctxt->bufuse = xsltDuplicate(&ctxt->lastTextNode, &ctxt->buffer, length, ctxt->bufuse, ctxt);
             ctxt->lastTextNode->content = xmlStrdup("");
             ctxt->lastNodeSize = 0;
             
@@ -921,7 +922,7 @@ xsltAddTextString(xsltTransformContextPtr ctxt, xmlNodePtr target,
         if (target->type == XML_TEXT_NODE || target->type == XML_CDATA_SECTION_NODE)
         {
             int length = xmlStrlen(target->content);
-            ctxt->bufsize = xsltDuplicate(&target->content, &ctxt->buffer, length, 0, ctxt);
+            ctxt->bufuse = xsltDuplicate(&target->content, &ctxt->buffer, length, 0, ctxt);
            
             xmlChar *tmp = target->content; 
             ctxt->lastTextNode = target;
@@ -939,7 +940,7 @@ xsltAddTextString(xsltTransformContextPtr ctxt, xmlNodePtr target,
         }
         ctxt->lastNodeSize = 0;
     }
-    ctxt->bufsize = xsltDuplicate(&string, &ctxt->buffer, len, ctxt->bufsize, ctxt);
+    ctxt->bufuse = xsltDuplicate(&string, &ctxt->buffer, len, ctxt->bufuse, ctxt);
     return (target);
 }
 
