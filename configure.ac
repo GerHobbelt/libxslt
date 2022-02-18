@@ -3,7 +3,7 @@ AC_PREREQ(2.63)
 
 m4_define([MAJOR_VERSION], [1])
 m4_define([MINOR_VERSION], [1])
-m4_define([MICRO_VERSION], [34])
+m4_define([MICRO_VERSION], [35])
 
 AC_INIT([libxslt], [MAJOR_VERSION.MINOR_VERSION.MICRO_VERSION])
 AC_CONFIG_SRCDIR([libxslt/xslt.c])
@@ -108,6 +108,13 @@ AC_ARG_WITH(html-subdir, AS_HELP_STRING([--with-html-subdir=path],
             [HTML_DIR="$HTML_DIR/\$(PACKAGE)-\$(VERSION)/html"])
 
 AC_SUBST(HTML_DIR)
+
+AC_ARG_ENABLE(rebuild-docs,
+[  --enable-rebuild-docs[[=yes/no]]  rebuild some generated docs [[default=no]]])
+if test "$enable_rebuild_docs" = "yes" -a "$srcdir" != "."; then
+  AC_MSG_ERROR([cannot rebuild docs when builddir != srcdir])
+fi
+AM_CONDITIONAL([REBUILD_DOCS], [test "$enable_rebuild_docs" = "yes"])
 
 dnl
 dnl Check the environment
@@ -326,7 +333,7 @@ except:
 	    then
 		PYTHON_SITE_PACKAGES=$with_python/lib/site-packages
 	    else
-		PYTHON_SITE_PACKAGES=`$PYTHON -c "from distutils import sysconfig; print(sysconfig.get_python_lib())"`
+		PYTHON_SITE_PACKAGES=$($PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_python_lib(True,False,"${exec_prefix}"))')
 	    fi
 	fi
     fi
@@ -604,7 +611,7 @@ fi
 
 if test "x$LIBXML_LIBS" = "x"
 then
-	AC_MSG_ERROR([Could not find libxml2 anywhere, check ftp://xmlsoft.org/.])
+	AC_MSG_ERROR([Could not find libxml2 anywhere.])
 fi
 
 
@@ -746,6 +753,8 @@ tests/exslt/crypto/Makefile
 tests/plugins/Makefile
 tests/fuzz/Makefile
 doc/Makefile
+doc/devhelp/Makefile
+doc/EXSLT/devhelp/Makefile
 xslt-config
 libxslt.spec
 ])
