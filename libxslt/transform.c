@@ -2327,6 +2327,12 @@ xsltReleaseLocalRVTs(xsltTransformContextPtr ctxt, xmlDocPtr base)
 
     if (cur == base)
         return;
+
+    /* we are about to delete xml nodes that may actually be the
+     * lastTextNode, so flush everything */
+    xsltFlush (ctxt);
+    ctxt->lastTextNode = NULL;
+
     if (cur->prev != NULL)
         xsltTransformError(ctxt, NULL, NULL, "localRVT not head of list\n");
 
