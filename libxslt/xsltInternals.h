@@ -1753,12 +1753,14 @@ struct _xsltTransformContext {
     int bufsize;                /* the total size of the buffer */              
     int bufuse;                  /* actual size containing text */
 
+    /* At any time, lastTextNode may be NULL, meaning that the optimization
+     * mechanism is not yet in use. If it is filled, lastNodeSize is set to
+     * to the last known size of lastTextNode, to avoid moving in/out to the
+     * optimization buffer data the first time we see a text node, we wait
+     * to see a second time */
     xmlNodePtr lastTextNode;   
     int lastNodeSize;           /* the size of the last text node */
 
-    /*
-     * Speed optimization when coalescing text nodes
-     */
     /*
      * Per Context Debugging
      */
