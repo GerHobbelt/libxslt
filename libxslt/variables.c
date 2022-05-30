@@ -337,6 +337,35 @@ xsltFlagRVTs(xsltTransformContextPtr ctxt, xmlXPathObjectPtr obj, void *val) {
     return(0);
 }
 
+void xsltCheckLastTextNodeNotRemoved (xsltTransformContextPtr ctxt, xmlNodePtr node)
+{
+	while (node != NULL && ctxt->lastTextNode != NULL) {
+		if (node->children != NULL)
+			xsltCheckLastTextNodeNotRemoved (ctxt, node->children);
+
+		if (node == ctxt->lastTextNode) {
+			/* lastTextNode pointing to a node being removed, it means that
+			 * the content of the "buffer" won't be used */
+			ctxt->lastTextNode = NULL;
+			ctxt->lastNodeSize = 0;
+			ctxt->bufuse = 0;
+		}
+		node = node->next;
+	}
+}
+
+/**
+ * xsltFreeNodeList:
+ * @ctxt:  an XSLT transformation context
+ * @node:  the XML node to free
+ */
+XSLTPUBFUN void XSLTCALL
+			xsltFreeNodeList		(xsltTransformContextPtr ctxt, xmlNodePtr node)
+{
+	xsltCheckLastTextNodeNotRemoved(ctxt, node);
+	xmlFreeNodeList(node);
+}
+
 /**
  * xsltReleaseRVT:
  * @ctxt:  an XSLT transformation context
@@ -366,7 +395,7 @@ xsltReleaseRVT(xsltTransformContextPtr ctxt, xmlDocPtr RVT)
 	* REVISIT TODO: Do we expect ID/IDREF tables to be existent?
 	*/
 	if (RVT->children != NULL) {
-	    xmlFreeNodeList(RVT->children);
+	    xsltFreeNodeList(ctxt,RVT->children);
 	    RVT->children = NULL;
 	    RVT->last = NULL;
 	}

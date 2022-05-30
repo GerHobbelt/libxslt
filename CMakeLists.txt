@@ -12,6 +12,13 @@ include(CheckSymbolExists)
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
+if( CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
+add_compile_options(
+    -g2                          # Debug macro definitions
+    -ggdb2
+)
+endif()
+
 find_package(LibXml2 CONFIG REQUIRED)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)

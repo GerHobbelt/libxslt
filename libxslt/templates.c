@@ -548,7 +548,7 @@ xsltAttrTemplateProcess(xsltTransformContextPtr ctxt, xmlNodePtr target,
     }
     if (ret != NULL) {
         /* free the existing value */
-	xmlFreeNodeList(ret->children);
+	xsltFreeNodeList(ctxt,ret->children);
 	ret->children = ret->last = NULL;
 	/*
 	* Adjust ns-prefix if needed.

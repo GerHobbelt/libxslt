@@ -1948,6 +1948,13 @@ XSLTPUBFUN void XSLTCALL
 XSLTPUBFUN void XSLTCALL
 			xsltUninit		(void);
 
+/*
+ * Function to clean XML nodes, and ensure that the text mechanism does not
+ * get broken
+ */
+XSLTPUBFUN void XSLTCALL
+			xsltFreeNodeList		(xsltTransformContextPtr ctxt, xmlNodePtr node);
+
 /************************************************************************
  *									*
  *  Compile-time functions for *internal* use only                      *
