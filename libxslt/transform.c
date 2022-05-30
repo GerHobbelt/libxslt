@@ -801,6 +801,58 @@ xsltAddChild(xmlNodePtr parent, xmlNodePtr cur) {
 }
 
 /**
+ * xsltAddTextStringToOptimizationBuffer
+ * @src: The source text
+ * @srcLen: The length of src in chars
+**/
+static void xsltAddTextStringToOptimizationBuffer(xsltTransformContextPtr ctxt, xmlChar *src, int srcLen)
+{
+    if (INT_MAX - srcLen <= ctxt->bufuse)
+    {
+        xsltTransformError(ctxt, NULL, NULL,
+                "xsltDuplicate: text allocation failed, bad parameter srcLen\n");
+        return ;
+    }
+    xmlChar *buffer;
+
+    int newLen = srcLen + ctxt->bufuse;
+    if (newLen >= ctxt->bufsize)
+    {
+        ctxt->bufsize = (newLen + 1) * sizeof(xmlChar) * 1.5;
+        buffer = (xmlChar *) xmlRealloc(ctxt->buffer, ctxt->bufsize);
+        if (buffer == NULL)
+        {
+            xsltTransformError(ctxt, NULL, NULL,
+                "xsltDuplicate: text allocation failed, not enough memory\n");
+            return ;
+        }
+	ctxt->buffer  = buffer;
+    }
+    memcpy(&(ctxt->buffer[ctxt->bufuse]), src, srcLen);
+    ctxt->bufuse = newLen;
+    ctxt->buffer[newLen] = 0;
+}
+
+/**
+ * xsltAddLastTextNodeContentToOptimizationBuffer
+ * Copies content of @ctxt->lastTextNode and empties it
+ **/
+static void xsltAddLastTextNodeContentToOptimizationBuffer(xsltTransformContextPtr ctxt)
+{
+    xmlChar *tmp = ctxt->lastTextNode->content;
+
+    int length = xmlStrlen(tmp);
+    xsltAddTextStringToOptimizationBuffer(ctxt, tmp, length);
+
+    ctxt->lastTextNode->content = xmlStrdup("");
+    ctxt->lastNodeSize = 0;
+    if (xmlDictOwns(ctxt->lastTextNode->doc->dict, tmp) == 0)
+    {
+        xmlFree(tmp);
+    }
+}
+
+/**
  * xsltDuplicate
  * @src: The source text
  * @dst: The destination text
@@ -808,31 +860,29 @@ xsltAddChild(xmlNodePtr parent, xmlNodePtr cur) {
  * @dstSize: The length of dst in chars
  * 
  * Copies the content of the source text at the end of the dst one.
- *
- * Returns: The new length of the destination text
  */
 
-static int xsltDuplicate(xmlChar **src, xmlChar **dst, int srcLen, int dstLen, xsltTransformContextPtr ctxt)
+static void xsltDuplicate(xmlChar *src, xmlChar **dst, int srcLen, int dstLen, xsltTransformContextPtr ctxt)
 {
     if (INT_MAX - srcLen <= dstLen)
     {
         xsltTransformError(ctxt, NULL, NULL,
-                "xsltDuplicate: text allocation failed\n");
-        return 0;
+                "xsltDuplicate: text allocation failed, invalid srcLen or dstLen\n");
+        return;
+    }
+
+    if (*dst == ctxt->buffer)
+    {
+        xsltTransformError(ctxt, NULL, NULL,
+                "xsltDuplicate: internal error, do not use xsltDuplicate to write in ctxt->buffer\n");
+        return;
     }
     xmlChar *buffer;
-    if (*dst == ctxt->buffer && srcLen + dstLen >= ctxt->bufsize)
-    {    
-        ctxt->bufsize = (srcLen + dstLen + 1) * sizeof(xmlChar) * 1.5;
-        buffer = (xmlChar *) xmlRealloc(*dst, ctxt->bufsize);
-    }
-    else
-        buffer = (xmlChar *) xmlRealloc(*dst, (srcLen + dstLen + 1) * sizeof(xmlChar));
-    memcpy(&(buffer[dstLen]), *src, srcLen);
+
+    buffer = (xmlChar *) xmlRealloc(*dst, (srcLen + dstLen + 1) * sizeof(xmlChar));
+    memcpy(&(buffer[dstLen]), src, srcLen);
     buffer[srcLen + dstLen] = 0;
     *dst = buffer;
-
-    return dstLen + srcLen;
 }
 
 /**
@@ -845,9 +895,9 @@ void xsltFlush(xsltTransformContextPtr ctxt)
 {
     if (ctxt->bufuse > 0 && ctxt->buffer != NULL && ctxt->lastTextNode != NULL)
     {
-        xsltDuplicate(&ctxt->buffer, &ctxt->lastTextNode->content, ctxt->bufuse, ctxt->lastNodeSize, ctxt);
-        memset(ctxt->buffer, 0, ctxt->bufuse);
+        xsltDuplicate(ctxt->buffer, &ctxt->lastTextNode->content, ctxt->bufuse, ctxt->lastNodeSize, ctxt);
         ctxt->lastNodeSize += ctxt->bufuse;
+        ctxt->buffer[0] = 0;
         ctxt->bufuse = 0;
     }
 }
@@ -873,38 +923,14 @@ xsltAddTextString(xsltTransformContextPtr ctxt, xmlNodePtr target,
 
     if (ctxt->lastTextNode == NULL) /* LastTextNode initialization */
     {
-		ctxt->lastTextNode = target;
-        xmlChar *tmp = ctxt->lastTextNode->content;
+        ctxt->lastTextNode = target;
 
-        int length = xmlStrlen(ctxt->lastTextNode->content);
-        ctxt->bufuse = xsltDuplicate(&ctxt->lastTextNode->content, &ctxt->buffer, length, ctxt->bufuse, ctxt);
-        
-        ctxt->lastTextNode->content = xmlStrdup("");
-        ctxt->lastNodeSize = 0;
-        if (xmlDictOwns(target->doc->dict, tmp) == 0)
-        {
-            xmlFree(tmp);
-        }
+        xsltAddLastTextNodeContentToOptimizationBuffer(ctxt);
     }
 
     if (ctxt->lastTextNode->content[ctxt->lastNodeSize] != 0) /* Some text was added through xmlAddChild */ 
     {
-        
-        int length = xmlStrlen(ctxt->lastTextNode);
-        if (ctxt->bufuse > 0)
-        {
-            xmlChar *tmp = ctxt->lastTextNode->content;
-            ctxt->bufuse = xsltDuplicate(&ctxt->lastTextNode, &ctxt->buffer, length, ctxt->bufuse, ctxt);
-            ctxt->lastTextNode->content = xmlStrdup("");
-            ctxt->lastNodeSize = 0;
-            
-            if (xmlDictOwns(target->doc->dict, tmp) == 0)
-                 xmlFree(tmp);
-        }
-        else
-        {
-            ctxt->lastNodeSize = length;
-        }
+        xsltAddLastTextNodeContentToOptimizationBuffer(ctxt);
     }
 
     if (ctxt->insert != NULL && ctxt->insert->last != NULL && /* Stack handling */ 
@@ -919,28 +945,20 @@ xsltAddTextString(xsltTransformContextPtr ctxt, xmlNodePtr target,
     if (ctxt->lastTextNode != target) /* No longer the last text node */     
     {
         xsltFlush(ctxt);
+
         if (target->type == XML_TEXT_NODE || target->type == XML_CDATA_SECTION_NODE)
         {
-            int length = xmlStrlen(target->content);
-            ctxt->bufuse = xsltDuplicate(&target->content, &ctxt->buffer, length, 0, ctxt);
-           
-            xmlChar *tmp = target->content; 
             ctxt->lastTextNode = target;
-            target->content = xmlStrdup("");
-            if (xmlDictOwns(target->doc->dict, tmp) == 0)       
-            {
-                xmlFree(tmp);
-            }
+            xsltAddLastTextNodeContentToOptimizationBuffer(ctxt);
         }
-
         else /* It should never enter here */
         {
             xmlNodePtr newnode = xmlNewText("");
             ctxt->lastTextNode = xsltAddChild(target->parent, newnode);
+            ctxt->lastNodeSize = 0;
         }
-        ctxt->lastNodeSize = 0;
     }
-    ctxt->bufuse = xsltDuplicate(&string, &ctxt->buffer, len, ctxt->bufuse, ctxt);
+    xsltAddTextStringToOptimizationBuffer (ctxt, string, len);
     return (target);
 }
 
