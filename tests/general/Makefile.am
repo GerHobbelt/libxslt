@@ -233,6 +233,7 @@ EXTRA_DIST = \
     character.out character.xsl \
     character2.out character2.xsl \
     itemschoose.out itemschoose.xsl \
+    textopt1.out textopt1.xsl \
     inner.xsl \
     date_add.out date_add.xsl
 

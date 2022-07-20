@@ -225,6 +225,7 @@ EXTRA_DIST =	\
 	character.xml \
 	date_add.xml \
 	array.xml \
-	items.xml
+	items.xml \
+	textopt1.xml
 
 tests:
