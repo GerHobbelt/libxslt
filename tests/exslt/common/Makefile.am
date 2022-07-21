@@ -14,9 +14,10 @@ EXTRA_DIST = 						\
 	node-set.8.xml node-set.8.xsl node-set.8.out	\
 	object-type.1.xml object-type.1.xsl object-type.1.out \
 	import-test1a.imp import-test1b.imp import-test1.out \
-	import-test1.xml import-test1.xsl
+	import-test1.xml import-test1.xsl \
+	textopt1.out textopt1.xml textopt1.xsl textopt1.err
 
-CLEANFILES = .memdump
+CLEANFILES = .memdump textopt-tempdoc-*.txt 
 
 valgrind:
 	@echo '## Running the regression tests under Valgrind'
@@ -52,5 +53,5 @@ test tests: $(top_builddir)/xsltproc/xsltproc
 	  	echo $$name result ; \
 		echo "$$log" ; \
 	  fi ; \
-	  rm -f $$name.res $$name.bad; \
+	  rm -f $$name.res $$name.bad $$name-tempdoc*.txt; \
 	  done)
