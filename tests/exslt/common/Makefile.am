@@ -15,7 +15,8 @@ EXTRA_DIST = 						\
 	object-type.1.xml object-type.1.xsl object-type.1.out \
 	import-test1a.imp import-test1b.imp import-test1.out \
 	import-test1.xml import-test1.xsl \
-	textopt1.out textopt1.xml textopt1.xsl textopt1.err
+	textopt1.out textopt1.xml textopt1.xsl textopt1.err \
+	textopt2.out textopt2.xml textopt2.xsl textopt2.err
 
 CLEANFILES = .memdump textopt-tempdoc-*.txt 
 
