@@ -4,7 +4,11 @@
  * See Copyright for the status of this software.
  */
 
+#if defined(_WIN32) && !defined (__MINGW32__)
+#include <win32config.h>
+#else
 #include "config.h"
+#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -15,6 +19,7 @@
   #define WIN32_LEAN_AND_MEAN
   #include <windows.h>
   #include <io.h>
+  #include <direct.h>
 #else
   #include <unistd.h>
   #include <glob.h>
@@ -69,7 +74,7 @@ static int glob(const char *pattern, ATTRIBUTE_UNUSED int flags,
                 ATTRIBUTE_UNUSED int errfunc(const char *epath, int eerrno),
                 glob_t *pglob) {
     glob_t *ret;
-    WIN32_FIND_DATA FindFileData;
+    WIN32_FIND_DATAA FindFileData;
     HANDLE hFind;
     unsigned int nb_paths = 0;
     char directory[500];

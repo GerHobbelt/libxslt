@@ -1038,8 +1038,8 @@ xsltAttribute(xsltTransformContextPtr ctxt,
 	    * TODO: Does this have any effect for attribute values
 	    *  anyway?
 	    */
-	    if (inst->children->name == xmlStringTextNoenc)
-		copyTxt->name = xmlStringTextNoenc;
+	    if (inst->children->name == xmlStringTextNoenc())
+		copyTxt->name = xmlStringTextNoenc();
 	} else {
 	    /*
 	    * Copy the value.
@@ -1056,8 +1056,8 @@ xsltAttribute(xsltTransformContextPtr ctxt,
 	* TODO: Does this have any effect for attribute values
 	*  anyway?
 	*/
-	if (inst->children->name == xmlStringTextNoenc)
-	    copyTxt->name = xmlStringTextNoenc;
+	if (inst->children->name == xmlStringTextNoenc())
+	    copyTxt->name = xmlStringTextNoenc();
 
         /*
          * since we create the attribute without content IDness must be

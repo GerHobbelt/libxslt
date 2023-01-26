@@ -932,20 +932,20 @@ xsltCopyTextString(xsltTransformContextPtr ctxt, xmlNodePtr target,
 	*/
 	if ((target != NULL) && (target->last != NULL) &&
 	    (target->last->type == XML_TEXT_NODE) &&
-	    (target->last->name == xmlStringTextNoenc))
+	    (target->last->name == xmlStringTextNoenc()))
 	{
 	    return(xsltAddTextString(ctxt, target->last, string, len));
 	}
 	copy = xmlNewTextLen(string, len);
 	if (copy != NULL)
-	    copy->name = xmlStringTextNoenc;
+	    copy->name = xmlStringTextNoenc();
     } else {
 	/*
 	* Default processing.
 	*/
 	if ((target != NULL) && (target->last != NULL) &&
 	    (target->last->type == XML_TEXT_NODE) &&
-	    (target->last->name == xmlStringText)) {
+	    (target->last->name == xmlStringText())) {
 	    return(xsltAddTextString(ctxt, target->last, string, len));
 	}
 	copy = xmlNewTextLen(string, len);
@@ -993,7 +993,7 @@ xsltCopyText(xsltTransformContextPtr ctxt, xmlNodePtr target,
 	XSLT_TRACE(ctxt,XSLT_TRACE_COPY_TEXT,xsltGenericDebug(xsltGenericDebugContext,
 			 "xsltCopyText: copy CDATA text %s\n",
 			 cur->content));
-    } else if (cur->name == xmlStringTextNoenc) {
+    } else if (cur->name == xmlStringTextNoenc()) {
 	XSLT_TRACE(ctxt,XSLT_TRACE_COPY_TEXT,xsltGenericDebug(xsltGenericDebugContext,
 		     "xsltCopyText: copy unescaped text %s\n",
 			 cur->content));
@@ -1061,7 +1061,7 @@ xsltCopyText(xsltTransformContextPtr ctxt, xmlNodePtr target,
 	(target->last->name == cur->name)) ||
         /* non-escaped text nodes and CDATA-section nodes */
 	(((target->last->type == XML_CDATA_SECTION_NODE) &&
-	(cur->name == xmlStringTextNoenc)))))
+	(cur->name == xmlStringTextNoenc())))))
     {
 	/*
 	 * we are appending to an existing text node
@@ -1079,8 +1079,8 @@ xsltCopyText(xsltTransformContextPtr ctxt, xmlNodePtr target,
         copy = xmlNewTextLen(NULL, 0);
 	if (copy == NULL)
 	    goto exit;
-	if (cur->name == xmlStringTextNoenc)
-	    copy->name = xmlStringTextNoenc;
+	if (cur->name == xmlStringTextNoenc())
+	    copy->name = xmlStringTextNoenc();
 
 	/*
 	 * Must confirm that content is in dict (bug 302821)
@@ -1106,8 +1106,8 @@ xsltCopyText(xsltTransformContextPtr ctxt, xmlNodePtr target,
 	copy = xmlNewTextLen(cur->content, len);
 	if (copy == NULL)
 	    goto exit;
-	if (cur->name == xmlStringTextNoenc)
-	    copy->name = xmlStringTextNoenc;
+	if (cur->name == xmlStringTextNoenc())
+	    copy->name = xmlStringTextNoenc();
 	ctxt->lasttext = copy->content;
 	ctxt->lasttsize = len;
 	ctxt->lasttuse = len;
@@ -1645,7 +1645,7 @@ xsltCopyTree(xsltTransformContextPtr ctxt, xmlNodePtr invocNode,
 #endif
 	    break;
         case XML_TEXT_NODE: {
-	    int noenc = (node->name == xmlStringTextNoenc);
+	    int noenc = (node->name == xmlStringTextNoenc());
 	    return(xsltCopyTextString(ctxt, insert, node->content, noenc));
 	    }
         case XML_CDATA_SECTION_NODE:
@@ -2805,7 +2805,7 @@ xsltApplySequenceConstructor(xsltTransformContextPtr ctxt,
                 XSLT_TRACE(ctxt,XSLT_TRACE_APPLY_TEMPLATE,xsltGenericDebug(xsltGenericDebugContext,
                                  "xsltApplySequenceConstructor: copy CDATA text %s\n",
                                  cur->content));
-            } else if (cur->name == xmlStringTextNoenc) {
+            } else if (cur->name == xmlStringTextNoenc()) {
                 XSLT_TRACE(ctxt,XSLT_TRACE_APPLY_TEMPLATE,xsltGenericDebug(xsltGenericDebugContext,
                                  "xsltApplySequenceConstructor: copy unescaped text %s\n",
                                  cur->content));
@@ -4031,7 +4031,7 @@ xsltText(xsltTransformContextPtr ctxt, xmlNodePtr node ATTRIBUTE_UNUSED,
 		xsltGenericDebug(xsltGenericDebugContext,
 		     "Disable escaping: %s\n", text->content);
 #endif
-		copy->name = xmlStringTextNoenc;
+		copy->name = xmlStringTextNoenc();
 	    }
 	    copy = xsltAddChild(ctxt->insert, copy);
 	    text = text->next;
