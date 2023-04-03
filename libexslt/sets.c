@@ -112,15 +112,13 @@ exsltSetsDistinctFunction (xmlXPathParserContextPtr ctxt, int nargs) {
     /* !!! must be sorted !!! */
     ret = xmlXPathDistinctSorted(ns);
 
-    if (ret != ns)
-	xmlXPathFreeNodeSet(ns);
+	if (ret != ns)
+		xmlXPathFreeNodeSet(ns);
 
     obj = xmlXPathWrapNodeSet(ret);
-    if (obj != NULL) {
-        obj->user = user;
-        obj->boolval = boolval;
-    }
-    valuePush(ctxt, obj);
+    obj->user = user;
+    obj->boolval = boolval;
+    valuePush((ctxt), obj);
 }
 
 /**

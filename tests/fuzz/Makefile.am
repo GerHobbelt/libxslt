@@ -1,14 +1,21 @@
 LIBXSLT_LIBS = $(top_builddir)/libxslt/libxslt.la \
                $(top_builddir)/libexslt/libexslt.la
 
-EXTRA_PROGRAMS = genSeed xpath xslt
+EXTRA_PROGRAMS = xpath xslt
 check_PROGRAMS = testTargets
-EXTRA_DIST = xpath.dict xslt.dict
+EXTRA_DIST = xpath.dict xpath.xml xslt.dict xslt.xml seed
 CLEANFILES = $(EXTRA_PROGRAMS)
 AM_CPPFLAGS = -I$(top_srcdir)
+AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBXSLT_CFLAGS)
 DEPENDENCIES = $(LIBXSLT_LIBS)
 LDADD = $(LIBXSLT_LIBS) \
         $(LIBXML_LIBS) $(EXTRA_LIBS) $(LIBM)
+
+xpath_SOURCES = xpath.c fuzz.c fuzz.h
+xpath_LDFLAGS = -fsanitize=fuzzer
+
+xslt_SOURCES = xslt.c fuzz.c fuzz.h
+xslt_LDFLAGS = -fsanitize=fuzzer
 
 testTargets_SOURCES = testTargets.c fuzz.c fuzz.h
 
@@ -18,43 +25,22 @@ $(top_builddir)/libxslt/libxslt.la:
 $(top_builddir)/libexslt/libexslt.la: $(top_builddir)/libxslt/libxslt.la
 	cd $(top_builddir)/libexslt && $(MAKE) libexslt.la
 
-.PHONY: fuzz-xpath fuzz-xslt
+.PHONY: tests fuzz-xpath fuzz-xslt
 
-check-local: $(check_PROGRAMS)
+tests:
+
+fuzz: $(check_PROGRAMS)
 	@echo '## Running fuzz target tests'
-	@./testTargets
+	@./testTargets $(srcdir)
 
-# Seed corpus
-
-genSeed_SOURCES = genSeed.c fuzz.c
-
-# XPath fuzzer
-
-seed/xpath.stamp: genSeed$(EXEEXT)
-	@mkdir -p seed/xpath
-	@./genSeed$(EXEEXT) xpath "$(top_srcdir)/tests"
-	@touch seed/xpath.stamp
-
-xpath_SOURCES = xpath.c fuzz.c fuzz.h
-xpath_LDFLAGS = -fsanitize=fuzzer
-
-fuzz-xpath: xpath$(EXEEXT) seed/xpath.stamp
+fuzz-xpath: xpath$(EXEEXT)
 	@mkdir -p corpus/xpath
 	./xpath$(EXEEXT) \
+            -max_len=256 \
             -dict=$(srcdir)/xpath.dict \
 	    corpus/xpath $(srcdir)/seed/xpath
 
-# XSLT fuzzer
-
-seed/xslt.stamp: genSeed$(EXEEXT)
-	@mkdir -p seed/xslt
-	@./genSeed$(EXEEXT) xslt "$(top_srcdir)/tests"
-	@touch seed/xslt.stamp
-
-xslt_SOURCES = xslt.c fuzz.c fuzz.h
-xslt_LDFLAGS = -fsanitize=fuzzer
-
-fuzz-xslt: xslt$(EXEEXT) seed/xslt.stamp
+fuzz-xslt: xslt$(EXEEXT)
 	@mkdir -p corpus/xslt
 	./xslt$(EXEEXT) \
             -dict=$(srcdir)/xslt.dict \

@@ -1,8 +1,12 @@
 ## Process this file with automake to produce Makefile.in
 
-check-local:
+tests:
 	@$(MAKE) single
 	@$(MAKE) xtchunk
+
+valgrind:
+	@echo '## Running the regression tests under Valgrind'
+	$(MAKE) CHECKER='libtool --mode=execute valgrind -q --leak-check=full' tests
 
 $(top_builddir)/xsltproc/xsltproc:
 	@(cd ../../xsltproc ; $(MAKE) xsltproc)

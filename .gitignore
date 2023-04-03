@@ -1,7 +1,6 @@
 *.o
 *.la
 *.lo
-*.pyc
 tags
 */tags
 .deps/
@@ -39,6 +38,7 @@ ltmain.sh
 m4/
 missing
 py-compile
+python/*.pyc
 python/gen_prog
 python/libxslt-export.c
 python/libxslt-py.c
@@ -46,10 +46,8 @@ python/libxslt-py.h
 python/libxslt.py
 python/libxsltclass.py
 python/libxsltclass.txt
-python/setup.py
 python/tests/foo
 stamp-h1
-tests/runtest
 tests/xmlspec/debug
 xslt-config
 xsltConf.sh

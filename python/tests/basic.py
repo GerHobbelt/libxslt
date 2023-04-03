@@ -1,16 +1,15 @@
 #!/usr/bin/env python
-import os
 import sys
 import libxml2
 # Memory debug specific
 libxml2.debugMemory(1)
 import libxslt
 
-basedir = os.path.dirname(os.path.realpath(__file__))
 
-styledoc = libxml2.parseFile("%s/test.xsl" % basedir)
+
+styledoc = libxml2.parseFile("test.xsl")
 style = libxslt.parseStylesheetDoc(styledoc)
-doc = libxml2.parseFile("%s/test.xml" % basedir)
+doc = libxml2.parseFile("test.xml")
 result = style.applyStylesheet(doc, None)
 style.saveResultToFilename("foo", result, 0)
 stringval = style.saveResultToString(result)

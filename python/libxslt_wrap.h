@@ -1,7 +1,6 @@
 #include "libxml_wrap.h"
 #include <libxslt/xslt.h>
 #include <libxslt/xsltInternals.h>
-#include <libxslt/xsltlocale.h>
 #include <libxslt/xsltutils.h>
 #include <libxslt/attributes.h>
 #include <libxslt/documents.h>

@@ -116,7 +116,7 @@ xsltIsLetterDigit(int val) {
 #define IS_DIGIT_ONE(x) xsltIsDigitZero((x)-1)
 
 static int
-xsltIsDigitZero(int ch)
+xsltIsDigitZero(unsigned int ch)
 {
     /*
      * Reference: ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt
@@ -183,7 +183,7 @@ xsltNumberFormatDecimal(xmlBufferPtr buffer,
 	        i = -1;
 		break;
 	    }
-	    *(--pointer) = val;
+	    *(--pointer) = (xmlChar)val;
 	}
 	else {
 	/*
@@ -985,12 +985,32 @@ xsltFormatNumberConversion(xsltDecimalFormatPtr self,
 		"Invalid format (0-length)\n");
     }
     *result = NULL;
-    if (xmlXPathIsNaN(number)) {
-        if ((self == NULL) || (self->noNumber == NULL))
-            *result = xmlStrdup(BAD_CAST "NaN");
-        else
-            *result = xmlStrdup(self->noNumber);
-        return(status);
+    switch (xmlXPathIsInf(number)) {
+	case -1:
+	    if (self->minusSign == NULL)
+		*result = xmlStrdup(BAD_CAST "-");
+	    else
+		*result = xmlStrdup(self->minusSign);
+	    /* Intentional fall-through */
+	case 1:
+	    if ((self == NULL) || (self->infinity == NULL))
+		*result = xmlStrcat(*result, BAD_CAST "Infinity");
+	    else
+		*result = xmlStrcat(*result, self->infinity);
+	    return(status);
+	default:
+	    if (xmlXPathIsNaN(number)) {
+		if ((self == NULL) || (self->noNumber == NULL))
+		    *result = xmlStrdup(BAD_CAST "NaN");
+		else
+		    *result = xmlStrdup(self->noNumber);
+		return(status);
+	    }
+    }
+
+    buffer = xmlBufferCreate();
+    if (buffer == NULL) {
+	return XPATH_MEMORY_ERROR;
     }
 
     format_info.integer_hash = 0;
@@ -1263,30 +1283,6 @@ OUTPUT_NUMBER:
 	format_info.add_decimal = TRUE;
     }
 
-    /* Apply multiplier */
-    number *= (double)format_info.multiplier;
-    switch (xmlXPathIsInf(number)) {
-	case -1:
-	    if (self->minusSign == NULL)
-		*result = xmlStrdup(BAD_CAST "-");
-	    else
-		*result = xmlStrdup(self->minusSign);
-	    /* Intentional fall-through */
-	case 1:
-	    if ((self == NULL) || (self->infinity == NULL))
-		*result = xmlStrcat(*result, BAD_CAST "Infinity");
-	    else
-		*result = xmlStrcat(*result, self->infinity);
-	    return(status);
-	default:
-            break;
-    }
-
-    buffer = xmlBufferCreate();
-    if (buffer == NULL) {
-	return XPATH_MEMORY_ERROR;
-    }
-
     /* Ready to output our number.  First see if "default sign" is required */
     if (default_sign != 0)
 	xmlBufferAdd(buffer, self->minusSign, xmlUTF8Strsize(self->minusSign, 1));
@@ -1301,13 +1297,10 @@ OUTPUT_NUMBER:
         j += len;
     }
 
-    /* Round to n digits */
-    number = fabs(number);
-    scale = pow(10.0, (double)(format_info.frac_digits + format_info.frac_hash));
-    number += .5 / scale;
-    number -= fmod(number, 1 / scale);
-
     /* Next do the integer part of the number */
+    number = fabs(number) * (double)format_info.multiplier;
+    scale = pow(10.0, (double)(format_info.frac_digits + format_info.frac_hash));
+    number = floor((scale * number + 0.5)) / scale;
     if ((self->grouping != NULL) &&
         (self->grouping[0] != 0)) {
         int gchar;

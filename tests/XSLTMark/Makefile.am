@@ -61,9 +61,13 @@ xsltproc = $(top_builddir)/xsltproc/xsltproc
 $(xsltproc):
 	cd ../../xsltproc && $(MAKE) xsltproc
 
-check-local:
+test tests:
 	@echo '## Running XSLTMark tests'
 	@$(MAKE) $(ALL_TESTS)
+
+valgrind:
+	@echo '## Running the regression tests under Valgrind'
+	$(MAKE) CHECKER='libtool --mode=execute valgrind -q --leak-check=full' tests
 
 CLEANFILES = *.tmp *~ .memdump core db100.xml db1000.xml db10000.xml
 
@@ -736,4 +740,4 @@ depth: $(xsltproc)
 	fi
 	@rm -f $@.tmp
 
-.PHONY: $(ALL_TESTS)
+.PHONY: test tests valgrind $(ALL_TESTS)

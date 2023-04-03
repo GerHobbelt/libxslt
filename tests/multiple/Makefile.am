@@ -30,7 +30,11 @@ GENERATED = \
 
 CLEANFILES = .memdump
 
-check-local: $(top_builddir)/xsltproc/xsltproc
+valgrind:
+	@echo '## Running the regression tests under Valgrind'
+	$(MAKE) CHECKER='libtool --mode=execute valgrind -q --leak-check=full' tests
+
+test tests: $(top_builddir)/xsltproc/xsltproc
 	@echo '## Running multiple tests'
 	@(echo > .memdump)
 	@($(CHECKER) $(top_builddir)/xsltproc/xsltproc $(srcdir)/dict.xsl $(srcdir)/dict.xml > dict.res ; \

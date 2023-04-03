@@ -7,9 +7,8 @@
 #include "fuzz.h"
 
 int
-LLVMFuzzerInitialize(int *argc_p ATTRIBUTE_UNUSED,
-                     char ***argv_p ATTRIBUTE_UNUSED) {
-    return xsltFuzzXPathInit();
+LLVMFuzzerInitialize(int *argc_p, char ***argv_p) {
+    return xsltFuzzXPathInit(argc_p, argv_p, NULL);
 }
 
 int

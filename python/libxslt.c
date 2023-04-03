@@ -58,11 +58,7 @@ __inline int c99_vsnprintf(char *outBuf, size_t size, const char *format, va_lis
 /* #define DEBUG_EXTENSIONS */
 /* #define DEBUG_EXTENSIONS */
 
-#if PY_MAJOR_VERSION >= 3
-PyObject* PyInit_libxsltmod(void);
-#else
 void initlibxsltmod(void);
-#endif
 
 /************************************************************************
  *									*
@@ -303,7 +299,7 @@ libxslt_xsltElementPreCompCallback(xsltStylesheetPtr style, xmlNodePtr inst,
 	    pyobj_element_f);
 
     Py_INCREF(pyobj_precomp_f); /* Protect refcount against reentrant manipulation of callback hash */
-    result = PyObject_CallObject(pyobj_precomp_f, args);
+    result = PyEval_CallObject(pyobj_precomp_f, args);
     Py_DECREF(pyobj_precomp_f);
     Py_DECREF(args);
 
@@ -361,7 +357,7 @@ libxslt_xsltElementTransformCallback(xsltTransformContextPtr ctxt,
 	libxslt_xsltElemPreCompPtrWrap(comp));
 
     Py_INCREF(func); /* Protect refcount against reentrant manipulation of callback hash */
-    result = PyObject_CallObject(func, args);
+    result = PyEval_CallObject(func, args);
     Py_DECREF(func);
     Py_DECREF(args);
 
@@ -472,7 +468,7 @@ libxslt_xmlXPathFuncCallback(xmlXPathParserContextPtr ctxt, int nargs) {
     }
 
     Py_INCREF(current_function);
-    result = PyObject_CallObject(current_function, list);
+    result = PyEval_CallObject(current_function, list);
     Py_DECREF(current_function);
     Py_DECREF(list);
 
@@ -627,8 +623,7 @@ libxslt_xsltSetLoaderFunc(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
 }
 
 PyObject *
-libxslt_xsltGetLoaderFunc(PyObject *self ATTRIBUTE_UNUSED,
-	                  PyObject *args ATTRIBUTE_UNUSED) {
+libxslt_xsltGetLoaderFunc(void) {
     PyObject *py_retval;
 
     py_retval = pythonDocLoaderObject;
@@ -692,7 +687,7 @@ libxslt_xsltApplyStylesheetUser(PyObject *self ATTRIBUTE_UNUSED, PyObject *args)
     PyObject *pyobj_transformCtxt;
     const char **params = NULL;
     int len = 0, i, j;
-    Py_ssize_t ppos = 0;
+    ssize_t ppos = 0;
     PyObject *name;
     PyObject *value;
 
@@ -780,7 +775,7 @@ libxslt_xsltApplyStylesheet(PyObject *self ATTRIBUTE_UNUSED, PyObject *args) {
     PyObject *pyobj_params;
     const char **params = NULL;
     int len = 0, i, j, params_size;
-    Py_ssize_t ppos = 0;
+    ssize_t ppos = 0;
     PyObject *name;
     PyObject *value;
 
@@ -966,7 +961,7 @@ libxslt_xsltErrorFuncHandler(void *ctx ATTRIBUTE_UNUSED, const char *msg,
         Py_XINCREF(libxslt_xsltPythonErrorFuncCtxt);
         message = libxml_charPtrWrap(str);
         PyTuple_SetItem(list, 1, message);
-        result = PyObject_CallObject(libxslt_xsltPythonErrorFuncHandler, list);
+        result = PyEval_CallObject(libxslt_xsltPythonErrorFuncHandler, list);
         Py_XDECREF(list);
         Py_XDECREF(result);
     }
@@ -1234,9 +1229,9 @@ static PyMethodDef libxsltMethods[] = {
 
 #ifdef MERGED_MODULES
 #if PY_MAJOR_VERSION >= 3
-PyObject* PyInit_libxml2mod(void);
+extern PyObject*  PyInit_libxml2mod(void);
 #else
-void initlibxml2mod(void);
+extern void initlibxml2mod(void);
 #endif
 #endif
 

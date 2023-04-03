@@ -9,26 +9,24 @@
 #include "fuzz.h"
 #include <libxml/globals.h>
 
-static int
-testXPath(void) {
+int
+testXPath(int argc, char **argv) {
     xmlXPathObjectPtr obj;
-    const char data[] =
-        "\0\0\0\0count(//node())\\\n"
-        "<d><e><f/></e></d>";
+    const char expr[] = "count(//node())";
     int ret = 0;
 
-    if (xsltFuzzXPathInit() != 0) {
+    if (xsltFuzzXPathInit(&argc, &argv, argv[1]) != 0) {
         xsltFuzzXPathCleanup();
         return 1;
     }
 
-    obj = xsltFuzzXPath(data, sizeof(data) - 1);
+    obj = xsltFuzzXPath(expr, sizeof(expr) - 1);
     if ((obj == NULL) || (obj->type != XPATH_NUMBER)) {
         fprintf(stderr, "Expression doesn't evaluate to number\n");
         ret = 1;
-    } else if (obj->floatval != 3.0) {
+    } else if (obj->floatval != 39.0) {
         fprintf(stderr, "Expression returned %f, expected %f\n",
-                obj->floatval, 3.0);
+                obj->floatval, 39.0);
         ret = 1;
     }
 
@@ -38,11 +36,10 @@ testXPath(void) {
     return ret;
 }
 
-static int
-testXslt(void) {
+int
+testXslt(int argc, char **argv) {
     xmlChar *result;
-    const char fuzzData[] =
-        "\0\0\0\0stylesheet.xsl\\\n"
+    const char styleBuf[] =
         "<xsl:stylesheet"
         " xmlns:xsl='http://www.w3.org/1999/XSL/Transform'"
         " version='1.0'"
@@ -53,23 +50,21 @@ testXslt(void) {
         "<xsl:template match='/'>\n"
         " <r><xsl:value-of select='count(//node())'/></r>\n"
         "</xsl:template>\n"
-        "</xsl:stylesheet>\\\n"
-        "document.xml\\\n"
-        "<d><e><f/></e></d>";
+        "</xsl:stylesheet>\n";
     int ret = 0;
 
-    if (xsltFuzzXsltInit() != 0) {
+    if (xsltFuzzXsltInit(&argc, &argv, argv[1]) != 0) {
         xsltFuzzXsltCleanup();
         return 1;
     }
 
-    result = xsltFuzzXslt(fuzzData, sizeof(fuzzData) - 1);
+    result = xsltFuzzXslt(styleBuf, sizeof(styleBuf) - 1);
     if (result == NULL) {
         fprintf(stderr, "Result is NULL\n");
         ret = 1;
-    } else if (xmlStrcmp(result, BAD_CAST "<r>3</r>\n") != 0) {
+    } else if (xmlStrcmp(result, BAD_CAST "<r>42</r>\n") != 0) {
         fprintf(stderr, "Stylesheet returned\n%sexpected \n%s\n",
-                result, "<r>3</r>");
+                result, "<r>42</r>");
         ret = 1;
     }
 
@@ -79,13 +74,12 @@ testXslt(void) {
     return ret;
 }
 
-int
-main(void) {
+int main(int argc, char **argv) {
     int ret = 0;
 
-    if (testXPath() != 0)
+    if (testXPath(argc, argv) != 0)
         ret = 1;
-    if (testXslt() != 0)
+    if (testXslt(argc, argv) != 0)
         ret = 1;
 
     return ret;
