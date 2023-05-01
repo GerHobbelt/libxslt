@@ -1,0 +1,35 @@
+#!/bin/bash --
+
+C_LIB=clib2
+if (( ${#} > 0 ))
+then
+    if [[ "${1}" == "clib=newlib" ]]
+    then
+	C_LIB=newlib
+    elif [[ "${1}" != "clib=clib2" ]]
+    then
+	echo "Could not understand argument ${1}. Only clib=<newlib|clib2[default]> is understood" 1>&2
+	exit 1
+    fi
+fi
+INSTALL_PREFIX="$(pwd)/installAmiga_${C_LIB}"
+
+function _error
+{
+	echo 1>&2 "${1}"
+	exit ${2}
+}
+
+which ppc-amigaos-gcc 1>/dev/null 2>&1 || _error "Expected ppc-amigaos cross compiler on the path" 10
+
+# TODO: Remove --without-python. Stupid configuration pkg-config issue.
+./autogen.sh \
+    --prefix="${INSTALL_PREFIX}" \
+    --enable-static \
+    --disable-shared \
+    --without-python \
+    --host=ppc-amigaos \
+    CFLAGS="-mcrt=${C_LIB}" \
+    CPPFLAGS="-mcrt=${C_LIB}"
+    
+
