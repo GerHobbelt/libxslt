@@ -22,6 +22,12 @@ function _error
 
 which ppc-amigaos-gcc 1>/dev/null 2>&1 || _error "Expected ppc-amigaos cross compiler on the path" 10
 
+if [[ ! -d /sdk/ ]]
+then
+    echo "Error, you do not have a symbolic link named /sdk/ pointing to your ADTOOLS installation SDK" 2>&1
+    exit 3
+fi
+
 # TODO: Remove --without-python. Stupid configuration pkg-config issue.
 ./autogen.sh \
     --prefix="${INSTALL_PREFIX}" \
@@ -32,11 +38,12 @@ which ppc-amigaos-gcc 1>/dev/null 2>&1 || _error "Expected ppc-amigaos cross com
     CFLAGS="-mcrt=${C_LIB}" \
     CXXLAGS="-mcrt=${C_LIB}" \
     CPPFLAGS="-mcrt=${C_LIB}" \
-    LDFLAGS="-mcrt=${C_LIB} -athread=native"
+    LDFLAGS="-mcrt=${C_LIB} -athread=native" \
+    LIBS="/sdk/../lib/libstdc++.a -lpthread"
     
 if (( !${?} ))
 then
     make -j$(nproc) || { echo "Error with make" 2>&1 ; exit 1 ; }
 else
-    echo "Error with configure" 2>&1 ; exit 1
+    echo "Error with configure" 2>&1 ; exit 2
 fi
