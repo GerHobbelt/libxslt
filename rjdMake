@@ -29,7 +29,10 @@ which ppc-amigaos-gcc 1>/dev/null 2>&1 || _error "Expected ppc-amigaos cross com
     --disable-shared \
     --without-python \
     --host=ppc-amigaos \
+    CC=ppc-amigaos-g++ \
     CFLAGS="-mcrt=${C_LIB}" \
-    CPPFLAGS="-mcrt=${C_LIB}"
+    CXXLAGS="-mcrt=${C_LIB}" \
+    CPPFLAGS="-mcrt=${C_LIB}" \
+    LDFLAGS="-mcrt=${C_LIB} -athread=native"
     
 
