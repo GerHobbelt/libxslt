@@ -28,6 +28,30 @@ then
     exit 3
 fi
 
+function create_amiga_SDK_package
+{
+    SDK_DIRS=(
+	"local/${C_LIB}/bin"
+	"local/${C_LIB}/lib"
+	"local/${C_LIB}/share/libxml2/man"
+	"local/${C_LIB}/share/libxml2/doc"
+	"local/common/include"
+    )
+
+    for sdk_dir in "${SDK_DIRS[@]}"
+    do
+	mkdir -p "${sdk_dir}"
+	find "${INSTALL_PREFIX}" -type d -iname "$(basename ${sdk_dir})" -exec cp -r {}/. "${sdk_dir}" \;
+    done
+    lha a libxslt_1_1_37.lha local/
+}
+
+LIB_INFIX=.
+if [[ ${C_LIB} == "clib2" ]]
+then
+    LIB_INFIX=clib2
+fi
+
 # TODO: Remove --without-python. Stupid configuration pkg-config issue.
 ./autogen.sh \
     --prefix="${INSTALL_PREFIX}" \
@@ -39,11 +63,13 @@ fi
     CXXLAGS="-mcrt=${C_LIB}" \
     CPPFLAGS="-mcrt=${C_LIB}" \
     LDFLAGS="-mcrt=${C_LIB} -athread=native" \
-    LIBS="/sdk/../lib/libstdc++.a -lpthread"
+    LIBS="/sdk/../lib/${LIB_INFIX}/libstdc++.a -lpthread"
     
 if (( !${?} ))
 then
-    make -j$(nproc) || { echo "Error with make" 2>&1 ; exit 1 ; }
+    { make -j$(nproc) && make install ; } || { echo "Error with make" 2>&1 ; exit 1 ; }
+    create_amiga_SDK_package
+    echo "FINISHED. See libxslt_1_1_37.lha"
 else
     echo "Error with configure" 2>&1 ; exit 2
 fi
