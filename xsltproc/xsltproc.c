@@ -532,7 +532,7 @@ main(int argc, char **argv)
     _set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 
-    LIBXML_TEST_VERSION
+    LIBXML_TEST_VERSION();
 
     sec = xsltNewSecurityPrefs();
     xsltSetDefaultSecurityPrefs(sec);
