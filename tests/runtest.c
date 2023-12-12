@@ -34,6 +34,8 @@
 #include <libxslt/xsltutils.h>
 #include <libexslt/exslt.h>
 
+#include "../examples/monolithic_examples.h"
+
 /*
  * O_BINARY is just for Windows compatibility - if it isn't defined
  * on this system, avoid any compilation error
@@ -59,7 +61,7 @@ struct testDesc {
 };
 
 static int update_results = 0;
-static char* temp_directory = NULL;
+static const char* temp_directory = NULL;
 static int checkTestFile(const char *filename);
 
 #if defined(_WIN32)
@@ -831,8 +833,13 @@ runtest(int i) {
     return(ret);
 }
 
+
+#if defined(BUILD_MONOLITHIC)
+#define main      xslt_runtest_main
+#endif
+
 int
-main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
+main(int argc, const char **argv) {
     int i, a, ret = 0;
     int subset = 0;
 

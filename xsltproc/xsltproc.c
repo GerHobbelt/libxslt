@@ -55,6 +55,9 @@
 #include <sys/timeb.h>
 #endif
 
+#include "../examples/monolithic_examples.h"
+
+
 #ifdef LIBXML_DEBUG_ENABLED
 static int debug = 0;
 #endif
@@ -68,7 +71,7 @@ static int nodict = 0;
 #ifdef LIBXML_HTML_ENABLED
 static int html = 0;
 #endif
-static char *encoding = NULL;
+static const char *encoding = NULL;
 static int load_trace = 0;
 #ifdef LIBXML_XINCLUDE_ENABLED
 static int xinclude = 0;
@@ -509,8 +512,13 @@ static void usage(const char *name) {
     printf("\nProject libxslt home page: https://gitlab.gnome.org/GNOME/libxslt\n");
 }
 
+
+#if defined(BUILD_MONOLITHIC)
+#define main      xsltproc_main
+#endif
+
 int
-main(int argc, char **argv)
+main(int argc, const char **argv)
 {
     int i;
     xsltStylesheetPtr cur = NULL;
