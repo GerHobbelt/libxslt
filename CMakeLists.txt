@@ -294,7 +294,7 @@ set(
 	libexslt/date.c
 	libexslt/dynamic.c
 	libexslt/exslt.c
-	libexslt/functions.c
+	libexslt/exfunctions.c
 	libexslt/libexslt.h
 	libexslt/math.c
 	libexslt/saxon.c
