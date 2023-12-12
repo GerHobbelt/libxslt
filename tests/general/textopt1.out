@@ -1,0 +1,44 @@
+Some text.more text.
+more text again.
+Some other non-constant text: 3
+concat by template(plop 3 plip):concat by func (plop 3 plip)
+Some text.more text.
+more text again.
+Some other non-constant text: 
+concat by template(plop  plip):concat by func (plop  plip)
+Some text.more text.
+more text again.
+Some other non-constant text: 1
+concat by template(plop 1 plip):concat by func (plop 1 plip)
+Some text.more text.
+more text again.
+Some other non-constant text: 4
+concat by template(plop 4 plip):concat by func (plop 4 plip)
+Some text.more text.
+more text again.
+Some other non-constant text: 
+concat by template(plop  plip):concat by func (plop  plip)
+Some text.more text.
+more text again.
+Some other non-constant text: 
+concat by template(plop  plip):concat by func (plop  plip)
+Some text.more text.
+more text again.
+Some other non-constant text: -1
+concat by template(plop -1 plip):concat by func (plop -1 plip)
+Some text.more text.
+more text again.
+Some other non-constant text: some alpha
+concat by template(plop some alpha plip):concat by func (plop some alpha plip)
+Some text.more text.
+more text again.
+Some other non-constant text: 
+concat by template(plop  plip):concat by func (plop  plip)
+Some text.more text.
+more text again.
+Some other non-constant text: -99999999
+concat by template(plop -99999999 plip):concat by func (plop -99999999 plip)
+Some text.more text.
+more text again.
+Some other non-constant text: 
+concat by template(plop  plip):concat by func (plop  plip)
