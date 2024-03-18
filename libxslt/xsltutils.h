@@ -13,6 +13,7 @@
 #define __XML_XSLTUTILS_H__
 
 #include <libxslt/xsltconfig.h>
+#include <libxml/xmlversion.h>
 #include <libxml/xpath.h>
 #include <libxml/dict.h>
 #include <libxml/xmlerror.h>
