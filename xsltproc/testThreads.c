@@ -273,7 +273,6 @@ main(void)
     }
     xsltCleanupGlobals();
     xmlCleanupParser();
-    xmlMemoryDump();
     printf("Ok\n");
     return (0);
 }
